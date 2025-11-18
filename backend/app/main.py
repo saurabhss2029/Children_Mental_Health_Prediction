@@ -1,10 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .schemas import PredictionRequest
-from .model_utils import predict
+from app.auth import router as auth_router  # <-- auth import
+from app.model_utils import predict_child_health  # if your prediction function exists
+from app.schemas import ChildData  # request body model
 
-app = FastAPI(title="Child Mental Health Predictor API")
+app = FastAPI()
 
+# CORS (important for React)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -13,12 +15,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-def root():
-    return {"status": "ok", "message": "API running"}
+# ⬇️ ADD THIS LINE
+app.include_router(auth_router)
 
+# Your old prediction route
 @app.post("/predict")
-def predict_route(req: PredictionRequest):
-    payload = req.dict()
-    label, proba = predict(payload)
-    return {"prediction": label, "probabilities": proba}
+def predict(data: ChildData):
+    prediction = predict_child_health(data)
+    return {"prediction": prediction}
